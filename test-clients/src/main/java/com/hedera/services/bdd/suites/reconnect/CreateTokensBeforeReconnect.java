@@ -36,6 +36,7 @@ import static com.hedera.services.bdd.spec.queries.QueryVerbs.getVersionInfo;
 import static com.hedera.services.bdd.spec.transactions.TxnVerbs.tokenCreate;
 import static com.hedera.services.bdd.spec.utilops.LoadTest.defaultLoadTest;
 import static com.hedera.services.bdd.spec.utilops.UtilVerbs.logIt;
+import static com.hedera.services.bdd.spec.utilops.UtilVerbs.noOp;
 import static com.hedera.services.bdd.suites.reconnect.CreateAccountsBeforeReconnect.DEFAULT_MINS_FOR_RECONNECT_TESTS;
 import static com.hederahashgraph.api.proto.java.ResponseCodeEnum.BUSY;
 import static com.hederahashgraph.api.proto.java.ResponseCodeEnum.PLATFORM_TRANSACTION_NOT_CREATED;
@@ -47,7 +48,7 @@ import static com.hederahashgraph.api.proto.java.ResponseCodeEnum.UNKNOWN;
 public class CreateTokensBeforeReconnect extends HapiApiSuite {
 	private static final Logger log = LogManager.getLogger(CreateTokensBeforeReconnect.class);
 
-	private static final int TOKEN_CREATION_LIMIT = 300000;
+	private static final int TOKEN_CREATION_LIMIT = 200000;  // 3x60x120x10 = 216000
 	private static final int TOKEN_CREATION_RECONNECT_TPS = 120;
 	private static final int DEFAULT_TOKEN_THREADS_FOR_RECONNECT_TESTS = 10;
 
@@ -67,10 +68,7 @@ public class CreateTokensBeforeReconnect extends HapiApiSuite {
 	private HapiSpecOperation generateTopicCreateOperation() {
 		final long token = tokenNumber.getAndIncrement();
 		if (token >= TOKEN_CREATION_LIMIT) {
-			return getVersionInfo()
-					.fee(ONE_HUNDRED_HBARS)
-					.payingWith(GENESIS)
-					.noLogging();
+			return noOp();
 		}
 
 		return tokenCreate("token" + token)
