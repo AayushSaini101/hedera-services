@@ -188,8 +188,12 @@ public class AwareFcfsUsagePrices implements UsagePricesProvider {
 			if (map == null) {
 				map = new HashMap<>();
 			}
-			for (FeeData feeData : transactionFeeSchedule.getFeesList()) {
-				map.put(feeData.getSubType(), feeData);
+			if (transactionFeeSchedule.getFeesCount() == 0) {
+				map.put(SubType.DEFAULT, transactionFeeSchedule.getFeeData());
+			} else {
+				for (FeeData feeData : transactionFeeSchedule.getFeesList()) {
+					map.put(feeData.getSubType(), feeData);
+				}
 			}
 			feeScheduleMap.put(transactionFeeSchedule.getHederaFunctionality(), map);
 		}

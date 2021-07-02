@@ -309,4 +309,33 @@ class AwareFcfsUsagePricesTest {
 		// then:
 		assertEquals(DEFAULT_USAGE_PRICES, prices);
 	}
+
+	@Test
+	void shouldSetFeeSchedulesWithDeprecatedField() {
+		final var transactionFeeSchedule = TransactionFeeSchedule.newBuilder()
+				.setHederaFunctionality(CryptoTransfer);
+		final var deprecatedCurrent = FeeSchedule.newBuilder()
+				.setExpiryTime(TimestampSeconds.newBuilder().setSeconds(currentExpiry))
+				.addTransactionFeeSchedule(transactionFeeSchedule
+						.setFeeData(currentCryptoTransferUsagePrices.get(SubType.DEFAULT)));
+		final var deprecatedNext = FeeSchedule.newBuilder()
+				.setExpiryTime(TimestampSeconds.newBuilder().setSeconds(nextExpiry))
+				.addTransactionFeeSchedule(transactionFeeSchedule
+						.setFeeData(nextCryptoTransferUsagePrices.get(SubType.DEFAULT)));
+		final var withDeprecatedField = CurrentAndNextFeeSchedule.newBuilder()
+				.setCurrentFeeSchedule(deprecatedCurrent)
+				.setNextFeeSchedule(deprecatedNext)
+				.build();
+		given(hfs.cat(schedules)).willReturn(withDeprecatedField.toByteArray());
+		subject.loadPriceSchedules();
+
+		var actual = subject.activePricingSequence(CryptoTransfer);
+
+		assertEquals(
+				Triple.of(
+						currentCryptoTransferUsagePrices,
+						Instant.ofEpochSecond(currentExpiry),
+						nextCryptoTransferUsagePrices),
+				actual);
+	}
 }
