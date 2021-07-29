@@ -1761,11 +1761,12 @@ workflows:
   GCP-Daily-Services-Global-3NReconnect-15N-4C:
     triggers:
       - schedule:
-          cron: "40 7 * * *"
+          cron: "42 17 * * *"
           filters:
             branches:
               only:
-                - master
+#                - master
+                - 01897-D-Global-3N-Reconn-not-run
     jobs:
       - build-platform-and-services
       - jrs-regression:
@@ -2251,6 +2252,7 @@ workflows:
               branches:
                 ignore:
                   - NONE
+                  - 01897-D-Global-3N-Reconn-not-run
             workflow-name: "Continuous-integration"
         - sonar-check:
             context: SonarCloud
@@ -2942,10 +2944,10 @@ jobs:
         default: true
       slack_results_channel:
         type: string
-        default: "hedera-regression"
+        default: "hedera-regression-test"
       slack_summary_channel:
         type: string
-        default: "hedera-regression-summary"
+        default: "hedera-regression-test"
       workflow-name:
         type: string
         default: ""
