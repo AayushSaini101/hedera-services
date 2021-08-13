@@ -9,9 +9,9 @@ package com.hedera.services.yahcli.config;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,7 +37,8 @@ public class ConfigUtils {
 		try {
 			int number = Integer.parseInt(entity);
 			return "0.0." + number;
-		} catch (NumberFormatException ignore) {}
+		} catch (NumberFormatException ignore) {
+		}
 		return entity;
 	}
 
@@ -47,6 +48,20 @@ public class ConfigUtils {
 
 	public static Optional<File> keyFileFor(String keysLoc, String typedNum) {
 		var pemFile = Paths.get(keysLoc, typedNum + ".pem").toFile();
+		if (pemFile.exists()) {
+			return Optional.of(pemFile);
+		}
+
+		var wordsFile = Paths.get(keysLoc, typedNum + ".words").toFile();
+		if (wordsFile.exists()) {
+			return Optional.of(wordsFile);
+		}
+
+		return Optional.empty();
+	}
+
+	public static Optional<File> keyFileFor(String fullKeysLoc) {
+		var pemFile = Paths.get(fullKeysLoc + ".pem").toFile();
 		if (pemFile.exists()) {
 			return Optional.of(pemFile);
 		}

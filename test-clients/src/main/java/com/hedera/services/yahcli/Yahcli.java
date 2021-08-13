@@ -120,6 +120,7 @@ public class Yahcli implements Callable<Integer> {
 
 	private static void setLogLevelsToLessNoisy() {
 		List.of(
+				AccountsCommand.class,
 				BalanceSuite.class,
 				SysFileUploadSuite.class,
 				SysFileDownloadSuite.class,

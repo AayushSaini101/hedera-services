@@ -62,8 +62,6 @@ public class BalanceCommand implements Callable<Integer> {
 		var delegate = new BalanceSuite(config.asSpecConfig(), accounts);
 		delegate.runSuiteSync();
 
-
-
 		return 0;
 	}
 
