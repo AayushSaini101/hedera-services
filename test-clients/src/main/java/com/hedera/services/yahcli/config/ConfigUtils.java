@@ -60,20 +60,6 @@ public class ConfigUtils {
 		return Optional.empty();
 	}
 
-	public static Optional<File> keyFileFor(String fullKeysLoc) {
-		var pemFile = Paths.get(fullKeysLoc + ".pem").toFile();
-		if (pemFile.exists()) {
-			return Optional.of(pemFile);
-		}
-
-		var wordsFile = Paths.get(keysLoc, typedNum + ".words").toFile();
-		if (wordsFile.exists()) {
-			return Optional.of(wordsFile);
-		}
-
-		return Optional.empty();
-	}
-
 	static Optional<File> passFileFor(File pemFile) {
 		var absPath = pemFile.getAbsolutePath();
 		var passFile = new File(absPath.replace(".pem", ".pass"));

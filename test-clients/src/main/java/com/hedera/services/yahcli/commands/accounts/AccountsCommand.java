@@ -31,7 +31,8 @@ import java.util.concurrent.Callable;
 		name = "accounts",
 		subcommands = {
 				HelpCommand.class,
-				BalanceCommand.class
+				BalanceCommand.class,
+				RekeyCommand.class
 		},
 		description = "Perform account operations")
 public class AccountsCommand implements Callable<Integer> {
