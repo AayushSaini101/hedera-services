@@ -47,7 +47,6 @@ import com.hederahashgraph.api.proto.java.SignaturePair;
 import com.hederahashgraph.api.proto.java.SubType;
 import com.hederahashgraph.api.proto.java.TokenBurnTransactionBody;
 import com.hederahashgraph.api.proto.java.TokenCreateTransactionBody;
-import com.hederahashgraph.api.proto.java.TokenFeeScheduleUpdateTransactionBody;
 import com.hederahashgraph.api.proto.java.TokenID;
 import com.hederahashgraph.api.proto.java.TokenMintTransactionBody;
 import com.hederahashgraph.api.proto.java.TokenType;
@@ -339,10 +338,6 @@ class BaseOperationUsage {
 						.setAmount(123L)
 						.setDenominatingTokenId(target))
 						.build());
-		final var op = TokenFeeScheduleUpdateTransactionBody.newBuilder()
-				.setTokenId(target)
-				.addAllCustomFees(theNewSchedule)
-				.build();
 
 		/* The canonical usage and context */
 		final var newReprBytes = TOKEN_OPS_USAGE.bytesNeededToRepr(theNewSchedule);
