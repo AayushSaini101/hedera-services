@@ -1,6 +1,7 @@
 package com.hedera.services.statecreation;
 
 import com.google.common.base.Stopwatch;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.hedera.services.context.ServicesContext;
 import com.hedera.services.statecreation.creationtxns.ContractCreateTxnFactory;
 import com.hedera.services.statecreation.creationtxns.CryptoCreateTxnFactory;
@@ -11,6 +12,7 @@ import com.hedera.services.statecreation.creationtxns.TokenCreateTxnFactory;
 import com.hedera.services.statecreation.creationtxns.TopicCreateTxnFactory;
 import com.hedera.services.statecreation.creationtxns.FileCreateTxnFactory;
 import com.hedera.services.statecreation.creationtxns.UniqTokenCreateTxnFactory;
+import com.hedera.services.utils.SignedTxnAccessor;
 import com.hederahashgraph.api.proto.java.FileID;
 import com.hederahashgraph.api.proto.java.ResponseCodeEnum;
 import com.hederahashgraph.api.proto.java.Transaction;
@@ -156,9 +158,46 @@ public class BuiltinClient implements Runnable {
 		stopWatch.start();
 	}
 
+	private void backOff() {
+		try {
+			Thread.sleep(200);
+		} catch (InterruptedException e) { }
+	}
+
 	@FunctionalInterface
 	interface CreateTxnThrows<R, T> {
 		R create(T t) throws Throwable;
+	}
+
+	private int getReportStep(final int totalToCreate) {
+		if(totalToCreate > 1_000_000) {
+			return totalToCreate / 100;
+		} else if(totalToCreate > 100_000) {
+			return totalToCreate / 50;
+		} else if (totalToCreate > 10){
+			return totalToCreate / 10;
+		}
+		return totalToCreate;
+	}
+
+	private boolean submitOneTxn(final Transaction txn,
+			final String txnType,
+			final int index,
+			final int reportStep) throws InvalidProtocolBufferException, Throwable {
+		SignedTxnAccessor accessor = new SignedTxnAccessor(txn);
+		ResponseCodeEnum responseCode = ctx.submissionManager().trySubmission(accessor);
+
+		if(responseCode != OK) {
+			log.info("Backoff and resubmit: response code is {} for {} txn #{} and body {}",
+					responseCode , txnType, index, txn.toString());
+			backOff();
+			return false;
+		} else {
+			if(index % reportStep  == 0) {
+				log.info("Successfully submitted {} txn #{} ", txnType, index);
+			}
+		}
+		return true;
 	}
 
 	private <T> void create(CreateTxnThrows<Transaction, Integer> createOne,
@@ -166,34 +205,32 @@ public class BuiltinClient implements Runnable {
 			final int creationRate,
 			final String txnType,
 			final int reportSteps) {
+
+		int reportEvery;
+		if(reportSteps > 0) {
+			reportEvery = totalToCreate / reportSteps;
+		} else {
+			reportEvery = getReportStep(totalToCreate);
+		}
 		int i = 0;
-		int start = (int)ctx.seqNo().current();
 		while(i < totalToCreate) {
 			int j = 0;
 			try {
 				Transaction txn = createOne.create(i);
-				TransactionResponse resp = ctx.submissionFlow().submit(txn);
-				handleTxnResponse(resp, i, txnType, txn, totalToCreate / reportSteps);
+				if(submitOneTxn(txn, txnType, i, reportEvery)) {
+					i++;
+				}
+			} catch (InvalidProtocolBufferException e) {
+				log.warn("Bad transaction body for {}: ", txnType, e);
 			} catch (Throwable e) {
-				log.warn("Something happened while creating {}: ", txnType, e);
+				log.warn("Possible invalid signature for transaction {}: ", txnType, e);
 			}
-			i++;
 			j++;
 			if(j >= creationRate) {
 				j = 0;
 				pauseForRemainingMs();
 			}
 		}
-//		int end = (int)ctx.seqNo().current();
-//		int waitTimes = 60;
-//		while(end != start + totalToCreate && waitTimes > 0) {
-//			try {
-//				Thread.sleep(1000);
-//				waitTimes--;
-//			} catch (InterruptedException e) {
-//
-//			}
-//		}
 	}
 
 	private void handleTxnResponse(final TransactionResponse resp,
@@ -223,11 +260,11 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create( createAccount, totalToCreate, creationRate, "createAccount", 10 );
+		create( createAccount, totalToCreate, creationRate, "createAccount", 0 );
 
 		totalAccounts = totalToCreate;
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(30000);
 		} catch (InterruptedException e) { }
 
 		log.info("Done creating {} accounts", totalToCreate);
@@ -244,7 +281,7 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createTopic, totalToCreate, creationRate, "createTopic", 10);
+		create(createTopic, totalToCreate, creationRate, "createTopic", 0);
 
 		log.info("Done creating {} topics", totalToCreate);
 	}
@@ -334,7 +371,7 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createTokenAssociation, totalToCreate, creationRate, "createTokenAssociation", 10);
+		create(createTokenAssociation, totalToCreate, creationRate, "createTokenAssociation", 0);
 
 		try {
 			Thread.sleep(10000);
@@ -359,7 +396,7 @@ public class BuiltinClient implements Runnable {
 		totalUniqTokens = totalToCreate;
 
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(30000);
 		} catch (InterruptedException e) { }
 
 		log.info("Done creating {} uniqTokens", totalToCreate);
@@ -371,16 +408,21 @@ public class BuiltinClient implements Runnable {
 			log.warn("One token can't have {} NFTs. Max is {}", nftsPerToken, MAX_NFT_PER_TOKEN);
 			nftsPerToken = MAX_NFT_PER_TOKEN;
 		}
+
+		int reportStep = getReportStep(totalUniqTokens);
+
+		//int i = uniqTokenNumStart;
+		//while(i < uniqTokenNumStart + totalUniqTokens) {
 		for (int i = uniqTokenNumStart; i < uniqTokenNumStart + totalUniqTokens; i++) {
 			int k = 0;
 			try {
 				int rounds = nftsPerToken / NFT_MINT_BATCH_SIZE;
 				for(int j = 0; j < rounds; j++) {
-					mintOneBatchNFTs(i, totalToCreate, NFT_MINT_BATCH_SIZE);
+					mintOneBatchNFTs(i, reportStep, NFT_MINT_BATCH_SIZE);
 				}
 				int remaining = nftsPerToken - rounds * NFT_MINT_BATCH_SIZE;
 				if(remaining > 0) {
-					mintOneBatchNFTs(i, totalToCreate, remaining);
+					mintOneBatchNFTs(i, reportStep, remaining);
 				}
 			} catch (Throwable e) {
 				log.warn("Something happened while creating nfts: ", e);
@@ -397,7 +439,7 @@ public class BuiltinClient implements Runnable {
 		log.info("Done creating {} NFTs", nftsPerToken * totalUniqTokens);
 	}
 
-	private void mintOneBatchNFTs(final int uniqTokenNum, final int totalToCreate,
+	private void mintOneBatchNFTs(final int uniqTokenNum, final int reportStep,
 			final int numOfNfts) throws Throwable {
 		Transaction txn = NftCreateTxnFactory.newSignedNftCreate()
 				.fee(1_000_000_000L)
@@ -405,8 +447,7 @@ public class BuiltinClient implements Runnable {
 				.metaDataPer(numOfNfts)
 				.get();
 
-		TransactionResponse resp = ctx.submissionFlow().submit(txn);
-		handleTxnResponse(resp, uniqTokenNum, "createNFTs", txn, totalToCreate / 10);
+		submitOneTxn(txn, "createNFT", uniqTokenNum - uniqTokenNumStart, reportStep);
 	}
 
 	private int selectRandomAccount() {
