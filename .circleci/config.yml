@@ -1638,7 +1638,7 @@ workflows:
           filters:
             branches:
               only:
-                - 01956-D-state-creation-from-server
+                - Disabled-01956-D-state-creation-from-server
     jobs:
       - build-platform-and-services
       - jrs-regression:
