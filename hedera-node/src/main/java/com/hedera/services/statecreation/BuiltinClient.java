@@ -14,16 +14,16 @@ import com.hedera.services.statecreation.creationtxns.FileCreateTxnFactory;
 import com.hedera.services.statecreation.creationtxns.UniqTokenCreateTxnFactory;
 import com.hedera.services.utils.SignedTxnAccessor;
 import com.hederahashgraph.api.proto.java.FileID;
+import com.hederahashgraph.api.proto.java.HederaFunctionality;
 import com.hederahashgraph.api.proto.java.ResponseCodeEnum;
 import com.hederahashgraph.api.proto.java.Transaction;
-import com.hederahashgraph.api.proto.java.TransactionResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
+//import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -54,7 +54,7 @@ public class BuiltinClient implements Runnable {
 	private static int contractFileNumStart;
 	private static int totalContractFiles;
 
-	private Stopwatch stopWatch = Stopwatch.createUnstarted();
+//	private Stopwatch stopWatch = Stopwatch.createUnstarted();
 
 
 	private static AtomicInteger currentEntityNumEnd = new AtomicInteger(1001);
@@ -75,7 +75,7 @@ public class BuiltinClient implements Runnable {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {	}
 
-		stopWatch.start();
+//		stopWatch.start();
 		processOrders.forEach(this::createEntitiesFor);
 
 		log.info("All entities created. Shutdown the client thread");
@@ -91,14 +91,15 @@ public class BuiltinClient implements Runnable {
 	private void createEntitiesFor(Integer posi, String entityType) {
 		String valStr = properties.getProperty(processOrders.get(posi) + ".total");
 		int totalToCreate = Integer.parseInt(valStr);
-		valStr = properties.getProperty(entityType + ".creation.rate");
-		log.info("Create " + totalToCreate + " : " + entityType + ", rate: " + valStr);
+		//valStr = properties.getProperty(entityType + ".creation.rate");
+		//log.info("Create " + totalToCreate + " : " + entityType + ", rate: " + valStr);
 
-		int creationRate = Integer.parseInt(valStr);
+		//int creationRate = Integer.parseInt(valStr);
 
 		if(totalToCreate > 0) {
-			log.info("Start to build " + valStr + " " + entityType + ". Starting number: " + currentEntityNumEnd.get() + ", at rate: " + creationRate);
-			createEntitiesFor(entityType,  totalToCreate, creationRate, properties, processOrders);
+			log.info("Start to build " + valStr + " " + entityType + ". Starting number: " + currentEntityNumEnd.get());// + ", at rate: " + creationRate);
+			//createEntitiesFor(entityType,  totalToCreate, creationRate, properties, processOrders);
+			createEntitiesFor(entityType,  totalToCreate, properties, processOrders);
 			log.info( entityType + " value range [{} - {}]",
 					currentEntityNumEnd.get(),currentEntityNumEnd.get() + totalToCreate - 1);
 
@@ -109,37 +110,46 @@ public class BuiltinClient implements Runnable {
 
 	private void createEntitiesFor(final String entityType,
 			final int totalToCreate,
-			final int creationRate,
+			//final int creationRate,
 			final Properties properties,
 			final Map<Integer, String> layoutProps) {
 
 		switch (entityType) {
 			case "accounts":
-				createAccounts(totalToCreate, creationRate);
+				//createAccounts(totalToCreate, creationRate);
+				createAccounts(totalToCreate);
 				break;
 			case "topics":
-				createTopics(totalToCreate, creationRate);
+				//createTopics(totalToCreate, creationRate);
+				createTopics(totalToCreate);
 				break;
 			case "tokens":
-				createTokens(totalToCreate, creationRate);
+				//createTokens(totalToCreate, creationRate);
+				createTokens(totalToCreate);
 				break;
 			case "files":
-				createFiles(totalToCreate, creationRate, false);
+				//createFiles(totalToCreate, creationRate, false);
+				createFiles(totalToCreate, false);
 				break;
 			case "smartContracts":
-				createSmartContracts(totalToCreate, creationRate, properties);
+				//createSmartContracts(totalToCreate, creationRate, properties);
+				createSmartContracts(totalToCreate, properties);
 				break;
 			case "tokenAssociations":
-				createTokenAssociations(totalToCreate, creationRate);
+				//createTokenAssociations(totalToCreate, creationRate);
+				createTokenAssociations(totalToCreate);
 				break;
 			case "uniqueTokens":
-				createUniqTokens(totalToCreate, creationRate);
+				//createUniqTokens(totalToCreate, creationRate);
+				createUniqTokens(totalToCreate);
 				break;
 			case "nfts":
-				createNfts(totalToCreate, creationRate);
+				//createNfts(totalToCreate, creationRate);
+				createNfts(totalToCreate);
 				break;
 			case "schedules":
-				createSchedules(totalToCreate, creationRate);
+				//createSchedules(totalToCreate, creationRate);
+				createSchedules(totalToCreate);
 				break;
 			default:
 				log.info("not implemented yet for " + entityType);
@@ -147,20 +157,32 @@ public class BuiltinClient implements Runnable {
 		}
 	}
 
-	private void pauseForRemainingMs() {
-		stopWatch.stop();
-		long remaining = ONE_SECOND - stopWatch.elapsed(TimeUnit.MILLISECONDS);
-		if(remaining > 0) {
-			try {
-				Thread.sleep(remaining);
-			} catch (InterruptedException e) { }
-		}
-		stopWatch.start();
-	}
+//	private void pauseForRemainingMs() {
+//		stopWatch.stop();
+//		long remaining = ONE_SECOND - stopWatch.elapsed(TimeUnit.MILLISECONDS);
+//		if(remaining > 0) {
+//			log.info("Slow down to send txn for {} ms", remaining);
+//			try {
+//				Thread.sleep(remaining);
+//			} catch (InterruptedException e) { }
+//		}
+//		stopWatch.reset();
+//		stopWatch.start();
+//	}
+//
+//	private void pauseForRemainingMs(final long remainingMs) {
+//		if(remainingMs > 0) {
+//			log.info("Slow down to send txn for {} ms", remainingMs);
+//			try {
+//				Thread.sleep(remainingMs);
+//			} catch (InterruptedException e) { }
+//		}
+//	}
+
 
 	private void backOff() {
 		try {
-			Thread.sleep(200);
+			Thread.sleep(100);
 		} catch (InterruptedException e) { }
 	}
 
@@ -174,36 +196,56 @@ public class BuiltinClient implements Runnable {
 			return totalToCreate / 100;
 		} else if(totalToCreate > 100_000) {
 			return totalToCreate / 50;
-		} else if (totalToCreate > 10){
+		} else if (totalToCreate > 10) {
 			return totalToCreate / 10;
 		}
 		return totalToCreate;
 	}
 
 	private boolean submitOneTxn(final Transaction txn,
-			final String txnType,
+			final HederaFunctionality txnType,
 			final int index,
-			final int reportStep) throws InvalidProtocolBufferException, Throwable {
+			final int reportStep
+			//final int totalToCreate
+			) throws InvalidProtocolBufferException, Throwable {
 		SignedTxnAccessor accessor = new SignedTxnAccessor(txn);
 		ResponseCodeEnum responseCode = ctx.submissionManager().trySubmission(accessor);
 
 		if(responseCode != OK) {
-			log.info("Backoff and resubmit: response code is {} for {} txn #{} and body {}",
+			log.info("Backoff and resubmit later: response code is {} for {} txn #{} and body {}",
 					responseCode , txnType, index, txn.toString());
 			backOff();
+			log.info("Transaction type {} handled: {}", txnType, ctx.opCounters().handledSoFar(txnType));
 			return false;
 		} else {
-			if(index % reportStep  == 0) {
+			if(index % reportStep  == 0 && txnType != HederaFunctionality.TokenMint) {
 				log.info("Successfully submitted {} txn #{} ", txnType, index);
+				log.info("Transaction type {} handled: {}", txnType, ctx.opCounters().handledSoFar(txnType));
+				log.info("Current seqNo: " + ctx.seqNo().current());
 			}
 		}
 		return true;
 	}
 
+	private void waitingForServer(final HederaFunctionality txnType, final int txnSubmitted,
+			final int txnsPendingAllowed, final int totalWaiting,
+			final int reportEvery) {
+		int count = 0;
+		while((ctx.opCounters().handledSoFar(txnType) <  txnSubmitted - txnsPendingAllowed)	&& count < totalWaiting) {
+			count++;
+			if(count % reportEvery == 0) {
+				log.info("Pause for transaction type {} handled: {}, submitted = {}", txnType,
+						ctx.opCounters().handledSoFar(txnType), txnSubmitted);
+			}
+			backOff();
+		}
+	}
+
 	private <T> void create(CreateTxnThrows<Transaction, Integer> createOne,
 			final int totalToCreate,
-			final int creationRate,
-			final String txnType,
+			//final int creationRate,
+			//final String txnType,
+			final HederaFunctionality txnType,
 			final int reportSteps) {
 
 		int reportEvery;
@@ -215,6 +257,7 @@ public class BuiltinClient implements Runnable {
 		int i = 0;
 		while(i < totalToCreate) {
 			int j = 0;
+			long startTime = System.currentTimeMillis();
 			try {
 				Transaction txn = createOne.create(i);
 				if(submitOneTxn(txn, txnType, i, reportEvery)) {
@@ -225,31 +268,30 @@ public class BuiltinClient implements Runnable {
 			} catch (Throwable e) {
 				log.warn("Possible invalid signature for transaction {}: ", txnType, e);
 			}
-			j++;
-			if(j >= creationRate) {
-				j = 0;
-				pauseForRemainingMs();
-			}
+//			j++;
+//			if(j >= creationRate) {
+//				j = 0;
+//				long durationInMs = System.currentTimeMillis() - startTime;
+//				if(ONE_SECOND > durationInMs) {
+//					pauseForRemainingMs(ONE_SECOND - durationInMs);
+//				}
+//			}
+
+			waitingForServer(txnType, i, 5000, 100, 10);
+
+//			int count = 0;
+//			while((ctx.opCounters().handledSoFar(txnType) <  i - 1000)	&& count < 100) {
+//				count++;
+//				if(count % 10 == 0) {
+//					log.info("Pause for transaction type {} handled: {}, submitted = {}", txnType,
+//							ctx.opCounters().handledSoFar(txnType), i);
+//				}
+//				backOff();
+//			}
 		}
 	}
 
-	private void handleTxnResponse(final TransactionResponse resp,
-			final int index,
-			final String txnType,
-			final Transaction txn,
-			final int pageSize ) {
-		ResponseCodeEnum retCode = resp.getNodeTransactionPrecheckCode();
-		if(retCode != OK) {
-			log.info("Response code is {} for {} txn #{} and body {}",
-					retCode , txnType, index, txn.toString());
-		} else {
-			if(index % pageSize == 0) {
-				log.info("Successfully submitted {} txn #{} ", txnType, index);
-			}
-		}
-	}
-
-	private void createAccounts(final int totalToCreate, final int creationRate) {
+	private void createAccounts(final int totalToCreate) {
 		CreateTxnThrows<Transaction, Integer> createAccount = (Integer i) -> {
 			Transaction txn = CryptoCreateTxnFactory.newSignedCryptoCreate()
 					.balance(i * 1_000_000L)
@@ -260,17 +302,19 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create( createAccount, totalToCreate, creationRate, "createAccount", 0 );
+		create(createAccount, totalToCreate, HederaFunctionality.CryptoCreate, 0);
 
 		totalAccounts = totalToCreate;
+
 		try {
-			Thread.sleep(30000);
+			Thread.sleep(10000);
 		} catch (InterruptedException e) { }
 
 		log.info("Done creating {} accounts", totalToCreate);
 	}
 
-	private void createTopics(final int totalToCreate, final int creationRate) {
+	private void createTopics(final int totalToCreate//, final int creationRate
+	) {
 
 		CreateTxnThrows<Transaction, Integer> createTopic = (Integer i) -> {
 			Transaction txn = TopicCreateTxnFactory.newSignedConsensusCreateTopic()
@@ -281,12 +325,12 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createTopic, totalToCreate, creationRate, "createTopic", 0);
+		create(createTopic, totalToCreate, HederaFunctionality.ConsensusCreateTopic, 0);
 
 		log.info("Done creating {} topics", totalToCreate);
 	}
 
-	private void createTokens(final int totalToCreate, final int creationRate) {
+	private void createTokens(final int totalToCreate) {
 		CreateTxnThrows<Transaction, Integer> createToken = (Integer i) -> {
 			Transaction txn = TokenCreateTxnFactory.newSignedTokenCreate()
 					.fee(1_000_000_000L)
@@ -297,13 +341,13 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createToken, totalToCreate, creationRate, "createToken", 10);
+		create(createToken, totalToCreate, HederaFunctionality.TokenCreate, 10);
 		tokenNumStart = currentEntityNumEnd.get();
 		totalTokens = totalToCreate;
 		log.info("Done creating {} fungible tokens", totalToCreate);
 	}
 
-	private void createFiles(final int totalToCreate, final int creationRate,
+	private void createFiles(final int totalToCreate, //, final int creationRate,
 			final boolean forContractFile) {
 
 		CreateTxnThrows<Transaction, Integer> createFile = (Integer i) -> {
@@ -314,7 +358,7 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createFile, totalToCreate, creationRate, "createFile", 10);
+		create(createFile, totalToCreate,  HederaFunctionality.FileCreate, 10);
 
 		if(forContractFile) {
 			contractFileNumStart = currentEntityNumEnd.get();
@@ -323,10 +367,11 @@ public class BuiltinClient implements Runnable {
 		log.info("Done creating {} files", totalToCreate);
 	}
 
-	private void createSmartContracts(final int totalToCreate, final int creationRate, final Properties properties ) {
+	private void createSmartContracts(final int totalToCreate, //final int creationRate,
+			final Properties properties ) {
 		final int totalContractFile = Integer.parseInt(properties.getProperty("smartContracts.total.file"));
-		final int fileCreationRate = Integer.parseInt(properties.getProperty("files.creation.rate"));
-		createFiles(totalContractFile, fileCreationRate, true);
+		//final int fileCreationRate = Integer.parseInt(properties.getProperty("files.creation.rate"));
+		createFiles(totalContractFile, true);
 
 		CreateTxnThrows<Transaction, Integer> createContract = (Integer i) -> {
 			Transaction txn = ContractCreateTxnFactory.newSignedContractCreate()
@@ -340,15 +385,16 @@ public class BuiltinClient implements Runnable {
 					.get();
 			return txn;
 		};
-		create(createContract, totalToCreate, creationRate, "createContract", 10);
+		create(createContract, totalToCreate, HederaFunctionality.ContractCreate, 10);
 		log.info("Done creating {} smart contracts", totalToCreate);
 	}
 
-	private void createSchedules(final int totalToCreate, final int creationRate) {
+	private void createSchedules(final int totalToCreate//, final int creationRate
+			 ) {
 		CreateTxnThrows<Transaction, Integer> createSchedule = (Integer i) -> {
 			Transaction txn = ScheduleCreateTxnFactory.newSignedScheduleCreate()
 					.fee(1_000_000_000L)
-					//.designatingPayer(asAccount("0.0." + selectRandomAccount()))
+					.designatingPayer(asAccount("0.0." + selectRandomAccount()))
 					.memo("Schedule " + i)
 					.from(selectRandomAccount())
 					.to(selectRandomAccount())
@@ -357,11 +403,13 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createSchedule, totalToCreate, creationRate, "createSchedule", 10);
+		create(createSchedule, totalToCreate, HederaFunctionality.ScheduleCreate, 10);
+
 		log.info("Done creating {} schedule transactions", totalToCreate);
 	}
 
-	private void createTokenAssociations(final int totalToCreate, final int creationRate) {
+	private void createTokenAssociations(final int totalToCreate//, final int creationRate
+	) {
 		CreateTxnThrows<Transaction, Integer> createTokenAssociation = (Integer i) -> {
 			Transaction txn = TokenAssociateCreateTxnFactory.newSignedTokenAssociate()
 					.fee(1_000_000_000L)
@@ -371,15 +419,16 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createTokenAssociation, totalToCreate, creationRate, "createTokenAssociation", 0);
+		create(createTokenAssociation, totalToCreate, HederaFunctionality.TokenAssociateToAccount, 0);
 
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {	}
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e) {	}
 		log.info("Done creating {} Token Associations", totalToCreate);
 	}
 
-	private void createUniqTokens(final int totalToCreate, final int creationRate) {
+	private void createUniqTokens(final int totalToCreate //, final int creationRate
+	) {
 		CreateTxnThrows<Transaction, Integer> createUniqueToken = (Integer i) -> {
 			Transaction txn = UniqTokenCreateTxnFactory.newSignedUniqTokenCreate()
 					.fee(1_000_000_000L)
@@ -390,64 +439,112 @@ public class BuiltinClient implements Runnable {
 			return txn;
 		};
 
-		create(createUniqueToken, totalToCreate, creationRate, "createUniqueToken", 10);
+		create(createUniqueToken, totalToCreate, HederaFunctionality.TokenCreate, 10);
 
 		uniqTokenNumStart = currentEntityNumEnd.get();
 		totalUniqTokens = totalToCreate;
 
-		try {
-			Thread.sleep(30000);
-		} catch (InterruptedException e) { }
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e) { }
 
 		log.info("Done creating {} uniqTokens", totalToCreate);
 	}
 
-	private void createNfts(final int totalToCreate, final int creationRate) {
+	private void createNfts(int totalToCreate //, final int creationRate
+	) {
 		int nftsPerToken = (int) Math.ceil(totalToCreate / totalUniqTokens);
 		if (nftsPerToken > MAX_NFT_PER_TOKEN) {
 			log.warn("One token can't have {} NFTs. Max is {}", nftsPerToken, MAX_NFT_PER_TOKEN);
 			nftsPerToken = MAX_NFT_PER_TOKEN;
 		}
+		totalToCreate = nftsPerToken * totalUniqTokens;
+		log.info("NFTs per uniq token: {}", nftsPerToken );
+		log.info("Will mint total {} NFTs for {} unique tokens", totalToCreate, totalUniqTokens);
 
-		int reportStep = getReportStep(totalUniqTokens);
+		int totalMintTimes;
+		int batchSize;
+		if(nftsPerToken > NFT_MINT_BATCH_SIZE) {
+			totalMintTimes = (int)Math.ceil(nftsPerToken / NFT_MINT_BATCH_SIZE) * totalUniqTokens;
+			batchSize = NFT_MINT_BATCH_SIZE;
+		} else {
+			totalMintTimes = totalUniqTokens;
+			batchSize = 1;
+		}
 
-		//int i = uniqTokenNumStart;
-		//while(i < uniqTokenNumStart + totalUniqTokens) {
-		for (int i = uniqTokenNumStart; i < uniqTokenNumStart + totalUniqTokens; i++) {
+		int reportEvery = totalUniqTokens / 100;
+
+		for (int i = 0; i < totalUniqTokens; i++) {
 			int k = 0;
 			try {
 				int rounds = nftsPerToken / NFT_MINT_BATCH_SIZE;
-				for(int j = 0; j < rounds; j++) {
-					mintOneBatchNFTs(i, reportStep, NFT_MINT_BATCH_SIZE);
+				int j = 0;
+				for(j = 0; j < rounds; j++) {
+					mintOneBatchNFTs(i, nftsPerToken, j, NFT_MINT_BATCH_SIZE, reportEvery);
 				}
 				int remaining = nftsPerToken - rounds * NFT_MINT_BATCH_SIZE;
 				if(remaining > 0) {
-					mintOneBatchNFTs(i, reportStep, remaining);
+					log.info("Submit remaining {} NFTs creation for token #{}", remaining, i+uniqTokenNumStart);
+					mintOneBatchNFTs(i, nftsPerToken, j, remaining, reportEvery);
 				}
 			} catch (Throwable e) {
 				log.warn("Something happened while creating nfts: ", e);
 			}
 			k++;
-			if(k >= creationRate) {
-				k = 0;
-				pauseForRemainingMs();
+
+//			int count = 0;
+//			while((ctx.opCounters().handledSoFar(HederaFunctionality.TokenMint) < i * nftsPerToken / batchSize - 5000)
+//					&& count < 1000) {
+//				count++;
+//				if(count % 10 == 0) {
+//					log.info("Pause for transaction type {} handled: {}, submitted = {}", HederaFunctionality.TokenMint,
+//							ctx.opCounters().handledSoFar(HederaFunctionality.TokenMint), i * nftsPerToken / batchSize);
+//					//count = 0;
+//				}
+//				backOff();
+//			}
+
+			waitingForServer(HederaFunctionality.TokenMint, i * nftsPerToken / batchSize,
+					5000, 1000, 10);
+
+//			if(k * nftsPerToken > creationRate * NFT_MINT_BATCH_SIZE) {
+//				k = 0;
+//				pauseForRemainingMs();
+//			}
+			if(i % reportEvery == 0) {
+				log.info("Successfully submitted {} for unique token #{} with {} NFTs", HederaFunctionality.TokenMint, i, nftsPerToken);
 			}
 		}
-		try {
-			Thread.sleep(60000);
-		} catch (InterruptedException e) {	}
+
+		// final wait to give platform time to clear wait queue.
+//		int wait = 0;
+//		while(ctx.opCounters().handledSoFar(HederaFunctionality.TokenMint) < totalMintTimes - 10000 && wait < 50000 ) {
+//			wait++;
+//			if(wait % 100 == 0) {
+//				log.info("Transaction type {} handled: {}", HederaFunctionality.TokenMint,
+//						ctx.opCounters().handledSoFar(HederaFunctionality.TokenMint));
+//			}
+//			backOff();
+//		}
+//
+		log.info("Wait for platform to consume excessive mint operation before moving on");
+		waitingForServer(HederaFunctionality.TokenMint, totalMintTimes, 10000, 50000, 100);
+
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e) {	}
 		log.info("Done creating {} NFTs", nftsPerToken * totalUniqTokens);
 	}
 
-	private void mintOneBatchNFTs(final int uniqTokenNum, final int reportStep,
-			final int numOfNfts) throws Throwable {
+	private void mintOneBatchNFTs(final int i, final int nftsPerToken, final int round,
+			final int batchSize, final int reportStep) throws Throwable {
 		Transaction txn = NftCreateTxnFactory.newSignedNftCreate()
 				.fee(1_000_000_000L)
-				.forUniqToken(uniqTokenNum)
-				.metaDataPer(numOfNfts)
+				.forUniqToken(i + uniqTokenNumStart)
+				.metaDataPer(batchSize)
 				.get();
-
-		submitOneTxn(txn, "createNFT", uniqTokenNum - uniqTokenNumStart, reportStep);
+		int nftCreatedSofar = i * nftsPerToken + ((round - 1) > 0 ? (round - 1) : 0) * NFT_MINT_BATCH_SIZE + batchSize;
+		submitOneTxn(txn, HederaFunctionality.TokenMint, nftCreatedSofar / batchSize, reportStep);
 	}
 
 	private int selectRandomAccount() {
