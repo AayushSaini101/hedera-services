@@ -1923,11 +1923,12 @@ workflows:
   GCP-Daily-Services-Comp-Reconnect-6N-1C:
     triggers:
       - schedule:
-          cron: "15 7 * * *"
+          cron: "53 14 * * *"
           filters:
             branches:
               only:
-                - master
+#                - master
+                - 02089-D-NDReconn-Fee-Schedule-Corruption
     jobs:
       - build-platform-and-services
       - jrs-regression:
@@ -2248,6 +2249,7 @@ workflows:
               branches:
                 ignore:
                   - NONE
+                  - 02089-D-NDReconn-Fee-Schedule-Corruption
             workflow-name: "Continuous-integration"
         - sonar-check:
             context: SonarCloud
@@ -2506,7 +2508,7 @@ jobs:
             cd /swirlds-platform;
             sed -i -e 's/github.com/services-jrs-regression/g' .gitmodules;
             git submodule update --init --recursive --checkout;
-            cd regression;
+            cd regression; git checkout 02089-D-NDReconn-Fee-Schedule-Corruption
             cd ..;
             mvn --no-transfer-progress clean install -DskipTests;
 
@@ -2919,10 +2921,10 @@ jobs:
         default: true
       slack_results_channel:
         type: string
-        default: "hedera-regression"
+        default: "hedera-regression-test"
       slack_summary_channel:
         type: string
-        default: "hedera-regression-summary"
+        default: "hedera-regression-test"
       workflow-name:
         type: string
         default: ""
