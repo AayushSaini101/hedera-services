@@ -596,7 +596,7 @@ commands:
               ${JRS_OPTIONS} \
               -Dlog4j.configurationFile=log4j2-jrs.xml \
               -Dspring.output.ansi.enabled=ALWAYS \
-              -jar regression.jar "${CONFIG_PATH}" "<< parameters.hedera_services_path >>" ${CI_PARAMETERS}
+              -jar regression.jar -r="<< parameters.hedera_services_path >>" "${CONFIG_PATH}" ${CI_PARAMETERS}
             popd > /dev/null 2>&1
           no_output_timeout: 30m
 
@@ -1806,7 +1806,7 @@ workflows:
   GCP-Daily-Services-Recovery-4N-1C:
     triggers:
       - schedule:
-          cron: "30 0 * * *"
+          cron: "4 2 * * *"
           filters:
             branches:
               only:
@@ -1928,8 +1928,8 @@ workflows:
           filters:
             branches:
               only:
-#                - master
-                - 02089-D-NDReconn-Fee-Schedule-Corruption
+                - master
+#                - 02089-D-NDReconn-Fee-Schedule-Corruption
     jobs:
       - build-platform-and-services
       - jrs-regression:
